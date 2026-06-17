@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>作者统计 · 追番日历</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #f5f3ff;
+      background: linear-gradient(135deg, #12081f 0%, #2b0a3d 45%, #1a0b24 100%);
+    }
+    .page { width: min(920px, 100% - 32px); margin: 0 auto; padding: 28px 0 48px; }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    .sub { color: #c4b5fd; margin: 0 0 24px; line-height: 1.6; }
+    .card {
+      background: rgba(17, 10, 29, 0.82);
+      border: 1px solid rgba(216, 180, 254, 0.14);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(8px);
+    }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .stat strong { display: block; font-size: 34px; margin-bottom: 6px; color: #fde68a; }
+    .stat span { color: #c4b5fd; font-size: 14px; }
+    label { display: block; margin-bottom: 8px; color: #ddd6fe; }
+    input {
+      width: 100%; max-width: 320px; padding: 10px 12px; border-radius: 12px;
+      border: 1px solid rgba(216, 180, 254, 0.2); background: rgba(255,255,255,0.06);
+      color: #fff; font: inherit;
+    }
+    button, .link-btn {
+      margin-top: 12px; padding: 10px 16px; border: 0; border-radius: 999px;
+      background: linear-gradient(135deg, #7c3aed, #dc2626); color: #fff;
+      font: inherit; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .link-btn.secondary { background: rgba(255,255,255,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid rgba(216,180,254,0.12); }
+    th { color: #ddd6fe; font-weight: 600; }
+    .error { color: #fecaca; margin-top: 10px; }
+    .hint { color: #a78bfa; font-size: 14px; line-height: 1.7; margin-top: 8px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>作者统计 / Author Stats</h1>
+    <p class="sub">查看每天访问人数与当前在线人数。数据保存在本机服务器上。</p>
+
+    <div class="toolbar">
+      <a class="link-btn secondary" href="/">← 返回追番日历 / Back</a>
+    </div>
+
+    <section id="login-card" class="card">
+      <label for="password">作者密码 / Password</label>
+      <input id="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
+      <button id="login-btn" type="button">进入统计 / View Stats</button>
+      <p class="hint">默认密码在 <code>standalone/data/author-config.json</code> 里，可自行修改。</p>
+      <p id="login-error" class="error" hidden></p>
+    </section>
+
+    <section id="stats-panel" hidden>
+      <div class="card stats-row">
+        <div class="stat"><strong id="today-count">0</strong><span>今日访问 / Today</span></div>
+        <div class="stat"><strong id="online-count">0</strong><span>正在使用 / Online Now</span></div>
+        <div class="stat"><strong id="total-count">0</strong><span>累计访问次数 / Total Views</span></div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 14px;font-size:18px;">近 14 天访问 / Last 14 Days</h2>
+        <table>
+          <thead><tr><th>日期 / Date</th><th>访问人数 / Visitors</th></tr></thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+
+      <button id="refresh-btn" type="button">刷新数据 / Refresh</button>
+      <p class="hint">「正在使用」= 最近 90 秒内有活动的访客。每 10 秒自动刷新。</p>
+    </section>
+  </main>
+
+  <script>
+    const PASSWORD_KEY = "author-stats-password";
+    let refreshTimer = null;
+
+    function getSavedPassword() {
+      return sessionStorage.getItem(PASSWORD_KEY) || "";
+    }
+
+    function savePassword(value) {
+      sessionStorage.setItem(PASSWORD_KEY, value);
+    }
+
+    async function fetchSummary(password) {
+      const response = await fetch("/api/stats/summary?password=" + encodeURIComponent(password));
+      if (!response.ok) {
+        const json = await response.json().catch(function () { return {}; });
+        throw new Error(json.error || "无法读取统计数据");
+      }
+      return response.json();
+    }
+
+    function renderSummary(data) {
+      document.getElementById("today-count").textContent = String(data.todayVisitors || 0);
+      document.getElementById("online-count").textContent = String(data.onlineNow || 0);
+      document.getElementById("total-count").textContent = String(data.totalViews || 0);
+
+      const body = document.getElementById("history-body");
+      body.innerHTML = "";
+      for (const row of data.dailyHistory || []) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td>" + row.date + "</td><td>" + row.count + "</td>";
+        body.appendChild(tr);
+      }
+    }
+
+    async function loadStats() {
+      const password = getSavedPassword();
+      if (!password) return;
+      const data = await fetchSummary(password);
+      renderSummary(data);
+      document.getElementById("login-card").hidden = true;
+      document.getElementById("stats-panel").hidden = false;
+    }
+
+    function startAutoRefresh() {
+      if (refreshTimer) window.clearInterval(refreshTimer);
+      refreshTimer = window.setInterval(function () {
+        loadStats().catch(function () {});
+      }, 10000);
+    }
+
+    document.getElementById("login-btn").addEventListener("click", async function () {
+      const password = document.getElementById("password").value.trim();
+      const errorEl = document.getElementById("login-error");
+      errorEl.hidden = true;
+      if (!password) {
+        errorEl.textContent = "请输入密码。";
+        errorEl.hidden = false;
+        return;
+      }
+      try {
+        savePassword(password);
+        await loadStats();
+        startAutoRefresh();
+      } catch (error) {
+        sessionStorage.removeItem(PASSWORD_KEY);
+        errorEl.textContent = error && error.message ? error.message : "登录失败";
+        errorEl.hidden = false;
+      }
+    });
+
+    document.getElementById("refresh-btn").addEventListener("click", function () {
+      loadStats().catch(function (error) {
+        alert(error && error.message ? error.message : "刷新失败");
+      });
+    });
+
+    if (getSavedPassword()) {
+      loadStats().then(startAutoRefresh).catch(function () {
+        sessionStorage.removeItem(PASSWORD_KEY);
+      });
+    }
+
+    (function initAuthorHeartbeat() {
+      let sessionId = localStorage.getItem("site-session-id");
+      if (!sessionId) return;
+      function beat() {
+        fetch("/api/stats/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: sessionId }),
+        }).catch(function () {});
+      }
+      beat();
+      window.setInterval(beat, 30000);
+    })();
+  </script>
+</body>
+</html>

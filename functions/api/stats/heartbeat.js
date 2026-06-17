@@ -1,0 +1,33 @@
+async function readStats(env) {
+  if (!env.STATS) {
+    return { daily: {}, sessions: {}, totalViews: 0 };
+  }
+  const raw = await env.STATS.get("site-stats");
+  if (!raw) {
+    return { daily: {}, sessions: {}, totalViews: 0 };
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { daily: {}, sessions: {}, totalViews: 0 };
+  }
+}
+
+async function writeStats(env, payload) {
+  if (!env.STATS) return;
+  await env.STATS.put("site-stats", JSON.stringify(payload));
+}
+
+export async function onRequestPost(context) {
+  const body = await context.request.json().catch(() => ({}));
+  const sessionId = String(body.sessionId || "").trim();
+  if (!sessionId) {
+    return Response.json({ ok: false }, { status: 400 });
+  }
+
+  const stats = await readStats(context.env);
+  stats.sessions[sessionId] = Date.now() / 1000;
+  await writeStats(context.env, stats);
+
+  return Response.json({ ok: true });
+}

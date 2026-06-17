@@ -1,0 +1,11 @@
+name = "anime-season-calendar"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "standalone"
+
+# 部署后在 Cloudflare 控制台创建 KV，把 id 填到下面，并设置 AUTHOR_PASSWORD 环境变量
+# [[kv_namespaces]]
+# binding = "STATS"
+# id = "your-kv-namespace-id"
+
+[vars]
+AUTHOR_PASSWORD = "zhuifan2026"
