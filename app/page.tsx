@@ -12,10 +12,12 @@ export default async function HomePage() {
   return (
     <main className="page-shell">
       <section className="hero">
-        <h1>追番日历</h1>
+        <h1>追番日历 / Anime Calendar</h1>
         <p>
           收录 2020 年至今新番，按年份与月份整理。点击「加入追番」后会保存在浏览器里，
           方便你只看自己的追番清单。
+          <br />
+          TV anime since 2020, grouped by year and month. Tracking is saved locally in your browser.
         </p>
       </section>
 

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "追番日历",
-  description: "2020年至今新番追番日历，按年份与月份整理更新时间。",
+  title: "追番日历 / Anime Calendar",
+  description: "2020年至今新番追番日历，按年份与月份整理更新时间。Anime release calendar since 2020.",
 };
 
 export default function RootLayout({

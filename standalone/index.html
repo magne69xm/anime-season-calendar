@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>追番日历</title>
+  <title>追番日历 / Anime Calendar</title>
   <style>
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
@@ -262,12 +262,12 @@
   </div>
   <main class="page-shell">
     <section class="hero">
-      <h1 id="season-title">追番日历</h1>
+      <h1 id="season-title">追番日历 / Anime Calendar</h1>
     </section>
 
     <div class="toolbar">
-      <button id="reload-btn" type="button">刷新数据</button>
-      <button id="filter-btn" class="secondary" type="button">只看我的追番</button>
+      <button id="reload-btn" type="button">刷新数据 / Refresh</button>
+      <button id="filter-btn" class="secondary" type="button">只看我的追番 / My List</button>
     </div>
 
     <div class="status-tabs" role="tablist" aria-label="番剧状态分页">
@@ -1183,19 +1183,24 @@
       const seasons = getAllSeasonsSince(2020);
       const allItems = [];
       const skipKeys = new Set(options.skipSeasonKeys || []);
+      let loadedCount = 0;
 
       for (let index = 0; index < seasons.length; index += 1) {
         const seasonInfo = seasons[index];
         const seasonKey = `${seasonInfo.year}-${seasonInfo.season}`;
         if (skipKeys.has(seasonKey)) continue;
 
+        loadedCount += 1;
         if (onProgress) {
-          onProgress(`正在加载 ${seasonInfo.label}（${index + 1}/${seasons.length}）`);
+          onProgress(`正在加载 ${seasonInfo.label}（${loadedCount}/${seasons.length - skipKeys.size}）`);
         }
 
         try {
           const items = await fetchSeasonAnime(seasonInfo);
           allItems.push(...items);
+          if (options.onSeasonLoaded) {
+            options.onSeasonLoaded(items);
+          }
         } catch (error) {
           if (onProgress) {
             onProgress(`加载 ${seasonInfo.label} 失败，继续下一季...`);
@@ -1393,6 +1398,15 @@
       const statusBox = document.getElementById("status-box");
       const currentSeason = getCurrentSeason();
       const currentSeasonKey = `${currentSeason.year}-${currentSeason.season}`;
+      const merged = new Map();
+
+      function mergeAndShow(items) {
+        for (const item of items) {
+          if (!isPopularItem(item)) continue;
+          merged.set(item.id, item);
+        }
+        applyAnimeList(Array.from(merged.values()));
+      }
 
       statusBox.className = "status-box";
       statusBox.style.display = "";
@@ -1404,7 +1418,7 @@
           return isPopularItem(item);
         });
         if (validCache.length) {
-          applyAnimeList(validCache);
+          mergeAndShow(validCache);
           statusBox.textContent = "已显示缓存数据，正在后台更新...";
         }
       }
@@ -1412,18 +1426,19 @@
       try {
         statusBox.textContent = `正在加载 ${currentSeason.label}...`;
         const currentItems = await fetchSeasonAnime(currentSeason);
-        applyAnimeList(currentItems);
-        statusBox.textContent = "本季已显示，正在加载 2020 年至今其余番剧...";
+        mergeAndShow(currentItems);
+        statusBox.textContent = "正在加载 2020 年至今其余番剧...";
 
         const restItems = await fetchAllAnimeSince2020(function (message) {
           statusBox.textContent = message;
         }, {
           skipSeasonKeys: [currentSeasonKey],
+          onSeasonLoaded: function (items) {
+            mergeAndShow(items);
+          },
         });
 
-        const merged = new Map();
-        for (const item of currentItems) merged.set(item.id, item);
-        for (const item of restItems) merged.set(item.id, item);
+        mergeAndShow(restItems);
         const baseItems = Array.from(merged.values());
 
         applyAnimeList(baseItems);
