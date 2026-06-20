@@ -759,20 +759,37 @@
       return "https://search.bilibili.com/all?keyword=" + encodeURIComponent(getSearchKeyword(item));
     }
 
+    function getInternationalWatchLinkEntries(keyword, malId) {
+      return [
+        { label: "免费 · Crunchyroll", url: "https://www.crunchyroll.com/search?q=" + encodeURIComponent(keyword) },
+        { label: "免费 · Tubi", url: "https://tubitv.com/search/" + encodeURIComponent(keyword) },
+        {
+          label: "免费 · YouTube",
+          url: "https://www.youtube.com/results?search_query=" + encodeURIComponent(keyword + " anime"),
+        },
+        { label: "免费 · Pluto TV", url: "https://pluto.tv/en/search?query=" + encodeURIComponent(keyword) },
+        { label: "Netflix", url: "https://www.netflix.com/search?q=" + encodeURIComponent(keyword) },
+        { label: "Hulu", url: "https://www.hulu.com/search?q=" + encodeURIComponent(keyword) },
+        { label: "Prime Video", url: "https://www.primevideo.com/search?phrase=" + encodeURIComponent(keyword) },
+        { label: "Disney+", url: "https://www.disneyplus.com/search?q=" + encodeURIComponent(keyword) },
+        { label: "HiDIVE", url: "https://www.hidive.com/search?q=" + encodeURIComponent(keyword) },
+        { label: "详情 · MAL", url: "https://myanimelist.net/anime/" + malId },
+      ];
+    }
+
     function getWatchLinksHtml(item) {
       const keyword = getSearchKeyword(item);
       if (USE_INTERNATIONAL_LINKS) {
-        const crunchyrollUrl =
-          "https://www.crunchyroll.com/search?q=" + encodeURIComponent(keyword);
-        const netflixUrl =
-          "https://www.netflix.com/search?q=" + encodeURIComponent(keyword);
-        const malUrl = "https://myanimelist.net/anime/" + item.id;
-
-        return `
-          <a class="link-button" href="${crunchyrollUrl}" target="_blank" rel="noopener noreferrer">Crunchyroll</a>
-          <a class="link-button secondary" href="${netflixUrl}" target="_blank" rel="noopener noreferrer">Netflix</a>
-          <a class="link-button secondary" href="${malUrl}" target="_blank" rel="noopener noreferrer">MAL</a>
-        `;
+        return getInternationalWatchLinkEntries(keyword, item.id)
+          .map(function (entry, index) {
+            const cls = index === 0 ? "link-button" : "link-button secondary";
+            return (
+              '<a class="' + cls + '" href="' + entry.url + '" target="_blank" rel="noopener noreferrer">' +
+              entry.label +
+              "</a>"
+            );
+          })
+          .join("");
       }
 
       const bilibiliUrl = getBilibiliSearchUrl(item);
@@ -1522,7 +1539,7 @@
       const footer = document.getElementById("footer-note");
       if (!footer) return;
       const watchNote = USE_INTERNATIONAL_LINKS
-        ? "观看链接：Crunchyroll、Netflix、MAL。"
+        ? "观看链接：Crunchyroll、Tubi、YouTube、Pluto TV（免费），Netflix、Hulu、Prime Video、Disney+、HiDIVE（订阅），MAL 为详情页。"
         : "「B站看番」打开 B 站搜索，「番组详情」跳转 Bangumi。本地请运行 启动网站.bat。";
       footer.innerHTML =
         "数据来源：MyAnimeList 热门 TV 番剧 + Bangumi 评分。 " +

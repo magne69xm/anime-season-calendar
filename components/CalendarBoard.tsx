@@ -9,9 +9,7 @@ import { getDisplayTitle, getJapaneseTitle, getPrimaryTitle } from "@/lib/titles
 import {
   getBilibiliSearchUrl,
   getBangumiSubjectUrl,
-  getCrunchyrollSearchUrl,
-  getMalAnimeUrl,
-  getNetflixSearchUrl,
+  getInternationalWatchLinks,
   isInternationalDeployment,
 } from "@/lib/links";
 
@@ -53,9 +51,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
   const international = isInternationalDeployment();
   const bilibiliUrl = getBilibiliSearchUrl(item);
   const bangumiUrl = getBangumiSubjectUrl(item.bangumiId);
-  const crunchyrollUrl = getCrunchyrollSearchUrl(item);
-  const netflixUrl = getNetflixSearchUrl(item);
-  const malUrl = getMalAnimeUrl(item.id);
+  const internationalLinks = getInternationalWatchLinks(item, item.id);
 
   return (
     <article className="anime-card">
@@ -98,32 +94,19 @@ export function AnimeCard({ item }: AnimeCardProps) {
 
         <div className="watch-links">
           {international ? (
-            <>
-              <a
-                className="link-button"
-                href={crunchyrollUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Crunchyroll
-              </a>
-              <a
-                className="link-button secondary"
-                href={netflixUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Netflix
-              </a>
-              <a
-                className="link-button secondary"
-                href={malUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                MAL
-              </a>
-            </>
+            internationalLinks.map(function (link, index) {
+              return (
+                <a
+                  key={link.label}
+                  className={index === 0 ? "link-button" : "link-button secondary"}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.label}
+                </a>
+              );
+            })
           ) : (
             <>
               <a
