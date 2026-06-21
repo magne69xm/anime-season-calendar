@@ -26,6 +26,9 @@ export default async function HomePage() {
       <p className="footer-note">
         数据来源：AniList；中文名来自 Bangumi。页面每小时更新一次；追番记录保存在你的浏览器本地，不会上传。
         当前共 {airingCount} 部番剧有明确更新时间。
+        <br />
+        Have ideas or feedback? Feel free to contact the author:{" "}
+        <a href="mailto:412449260@qq.com">412449260@qq.com</a>
       </p>
     </main>
   );

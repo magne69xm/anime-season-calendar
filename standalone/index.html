@@ -242,6 +242,7 @@
     .footer-note { margin-top: 28px; color: #a78bfa; font-size: 14px; line-height: 1.7; }
     .footer-note a { color: #e9d5ff; text-decoration: none; border-bottom: 1px solid rgba(233, 213, 255, 0.35); }
     .footer-note a:hover { color: #fff; }
+    .footer-contact { margin-top: 10px; color: #c4b5fd; }
     @media (max-width: 640px) {
       .page-shell { width: min(100% - 20px, 1200px); padding-top: 20px; }
       .anime-grid { grid-template-columns: 1fr; }
@@ -301,6 +302,7 @@
     const USE_INTERNATIONAL_LINKS = !IS_LOCAL_DEV;
     const JIKAN_API_BASE = USE_API_PROXY ? "/api/jikan" : "https://api.jikan.moe/v4";
     const FALLBACK_CATALOG_URL = "data/fallback-catalog.json";
+    const AUTHOR_EMAIL = "412449260@qq.com";
     function bangumiPath(path) {
       const suffix = path.startsWith("/") ? path : "/" + path;
       return USE_API_PROXY ? "/api/bgm" + suffix : "https://api.bgm.tv" + suffix;
@@ -1544,7 +1546,12 @@
       footer.innerHTML =
         "数据来源：MyAnimeList 热门 TV 番剧 + Bangumi 评分。 " +
         watchNote +
-        ' <br /><a href="author.html">作者入口 / Author</a>';
+        ' <br /><a href="author.html">作者入口 / Author</a>' +
+        '<p class="footer-contact">' +
+        "Have ideas or feedback? Feel free to contact the author: " +
+        '<a href="mailto:' + AUTHOR_EMAIL + '">' + AUTHOR_EMAIL + "</a>" +
+        "<br />有好的想法或建议？欢迎联系作者。" +
+        "</p>";
     }
 
     function getSiteSessionId() {
